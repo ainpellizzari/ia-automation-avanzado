@@ -1,0 +1,351 @@
+{
+  "name": "Checkpoint 1 - Calificador de Leads",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "responseMode": "responseNodes"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -32,
+        0
+      ],
+      "id": "a46061f7-7146-4b03-842c-d0d4cf824be1",
+      "name": "When chat message received",
+      "webhookId": "723115de-b8b0-4593-8ab2-c005f3417474"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "# ROL\nSos \"Nexo\", el Asistente de Calificación de Leads de NexoFlow, una agencia argentina que diseña automatizaciones y agentes de IA para pymes. Hablás en español rioplatense, con tono profesional, cercano y breve.\n\n# ÁMBITO\nAtendés únicamente a potenciales clientes interesados en los servicios de NexoFlow:\n- Automatización de procesos internos\n- Chatbots y agentes de atención al cliente\n- Integraciones entre herramientas (CRM, planillas, email, mensajería)\nQuedan fuera de tu alcance: soporte técnico a clientes existentes, asesoramiento legal, contable o impositivo, y cualquier tema no relacionado con los servicios.\n\n# OBJETIVO\nCalificar a cada lead en la menor cantidad de mensajes posible, recolectando estos datos:\n1. Nombre\n2. Empresa y rubro\n3. Cantidad de empleados\n4. Necesidad o problema concreto que quiere resolver\n5. Presupuesto aproximado\n6. Urgencia (para cuándo necesita la solución)\n7. Email de contacto\n\nEstrategia de recolección:\n- Primer mensaje: saludá, presentate en una línea y pedí en una lista breve: nombre, empresa y rubro, y qué necesita resolver. Aclará que puede responder todo junto.\n- Segundo mensaje: con la necesidad entendida, conectala en una frase con lo que hace NexoFlow y pedí en una lista los datos restantes: cantidad de empleados, presupuesto aproximado, urgencia y email.\n- Si el lead ya dio algún dato, no lo vuelvas a pedir: pedí solo los que faltan.\n- Si el lead no sabe o no quiere dar el presupuesto o la urgencia, aceptalo, registralo como \"No definido\" y no insistas más de una vez.\n\nCon esa información, clasificás al lead:\n- CALIENTE: necesidad clara, presupuesto definido y urgencia menor a 1 mes.\n- TIBIO: necesidad clara, pero sin presupuesto definido o sin urgencia.\n- FRÍO: está explorando, sin necesidad concreta.\n\n# USO DE HERRAMIENTAS\nUsá la herramienta \"Registrar Lead\" cuando tengas como mínimo nombre, email y necesidad. La herramienta usa el email como identificador único: si el lead ya existe, actualiza su fila; si no existe, crea una nueva.\n- Si el lead aporta datos nuevos o corrige alguno, volvé a usar la herramienta enviando TODOS los datos conocidos hasta el momento (no solo los nuevos), para que la fila quede completa.\n- Recalculá la clasificación (CALIENTE, TIBIO o FRÍO) cada vez que actualices.\n- Nunca uses la herramienta sin email.\n- Si el lead quiere cambiar su email, no lo registres de nuevo: indicá que un asesor va a actualizar el registro.\n\n# REGLAS (lo que NO tenés permitido hacer)\n- NO inventes precios, plazos, descuentos ni casos de éxito. Si preguntan precios, respondé que un asesor le va a enviar una propuesta personalizada.\n- NO prometas reuniones ni fechas: todavía no tenés acceso a la agenda.\n- NO pidas datos sensibles (DNI, datos bancarios, tarjetas, contraseñas).\n- NO afirmes que registraste un lead si la herramienta no confirmó que la operación fue exitosa.\n- Si no sabés algo, decilo con claridad. No supongas ni completes información faltante.\n- Escribí en español estándar: no uses lenguaje inclusivo (ni \"e\", ni \"x\", ni \"@\" como marcas de género).\n- Respuestas breves: máximo 6 líneas por mensaje. Podés usar una lista corta solo para pedir datos.\n\n# ESCALAMIENTO\nRespondé \"Te paso con un asesor de nuestro equipo, te va a contactar a la brevedad\" y no sigas calificando cuando:\n- El lead pida hablar con una persona.\n- Haya un reclamo, enojo o tono conflictivo.\n- La consulta sea un proyecto grande o complejo que exceda los servicios listados.\n- No logres entender la necesidad después de 2 intentos.",
+          "maxIterations": 7,
+          "returnIntermediateSteps": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        176,
+        0
+      ],
+      "id": "9a3f558b-27a8-47f2-a79a-2285b855dd57",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-5-5",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 5.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        144,
+        224
+      ],
+      "id": "89fe3e08-39b3-4e53-bcef-485a0f6c1f86",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "GLroA2WTJYyWsDFG",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        272,
+        224
+      ],
+      "id": "509a7749-8a62-4673-9959-1314e3b94754",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Registra o actualiza un lead comercial de NexoFlow en la planilla \"Leads NexoFlow\" de Google Sheets. Usa el email como identificador único: si el email ya existe, actualiza esa fila; si no existe, crea una nueva.\n\nCUÁNDO USARLA:\n- Cuando en la conversación ya tengas como mínimo el nombre, el email y la necesidad concreta del lead.\n- Cuando un lead ya registrado aporte datos nuevos o corrija datos previos (presupuesto, urgencia, cantidad de empleados, etc.). En ese caso enviá TODOS los datos conocidos hasta el momento, no solo los nuevos.\n- Cuando el lead indique que se tiene que ir y ya tengas los datos mínimos.\n\nCUÁNDO NO USARLA:\n- Si todavía no tenés un email con formato válido (usuario@dominio).\n- Para saludos, preguntas generales o consultas fuera del ámbito de NexoFlow.\n- Para clientes existentes que piden soporte técnico.\n- Para registrar datos supuestos o inventados: si el lead no dijo un dato, enviá \"No definido\".\n\nQUÉ DATOS ENVIAR: nombre, email, empresa, rubro, cantidad de empleados, necesidad (resumida en una frase), presupuesto, urgencia y clasificación (CALIENTE, TIBIO o FRÍO, según los criterios del system message).\n\nRESULTADO: devuelve la fila guardada. Confirmale al lead que sus datos quedaron registrados únicamente si la herramienta responde sin error.",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1jWzn8Y-5w-fzbuhobGqYZCs8JPGoh61oDAeaqaFTHWk",
+          "mode": "list",
+          "cachedResultName": "Leads NexoFlow",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1jWzn8Y-5w-fzbuhobGqYZCs8JPGoh61oDAeaqaFTHWk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1jWzn8Y-5w-fzbuhobGqYZCs8JPGoh61oDAeaqaFTHWk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $fromAI('Email', 'Email de contacto del lead, formato usuario@dominio', 'string') }}",
+            "Fecha": "={{ $now.setZone('America/Argentina/Buenos_Aires').toFormat('yyyy-MM-dd HH:mm') }}",
+            "Nombre": "={{ $fromAI('Nombre', 'Nombre y apellido del lead', 'string') }}",
+            "Empresa": "={{ $fromAI('Empresa', 'Nombre de la empresa del lead', 'string') }}",
+            "Rubro": "={{ $fromAI('Rubro', 'Rubro o industria de la empresa', 'string') }}",
+            "Empleados": "={{ $fromAI('Empleados', 'Cantidad de empleados, o No definido', 'string') }}",
+            "Necesidad": "={{ $fromAI('Necesidad', 'Problema que quiere resolver, resumido en una frase', 'string') }}",
+            "Presupuesto": "={{ $fromAI('Presupuesto', 'Presupuesto aproximado con moneda, o No definido', 'string') }}",
+            "Urgencia": "={{ $fromAI('Urgencia', 'Para cuándo necesita la solución, o No definido', 'string') }}",
+            "Clasificacion": "={{ $fromAI('Clasificacion', 'CALIENTE, TIBIO o FRÍO según criterios del system message', 'string') }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "schema": [
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Nombre",
+              "displayName": "Nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Empresa",
+              "displayName": "Empresa",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Rubro",
+              "displayName": "Rubro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Empleados",
+              "displayName": "Empleados",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Necesidad",
+              "displayName": "Necesidad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Presupuesto",
+              "displayName": "Presupuesto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Urgencia",
+              "displayName": "Urgencia",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Clasificacion",
+              "displayName": "Clasificacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        416,
+        224
+      ],
+      "id": "06b755c6-fc34-491b-aee1-525935fddd72",
+      "name": "Registrar Lead",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "2pV7WeuNCrtkA8az",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1.3,
+      "position": [
+        544,
+        0
+      ],
+      "id": "e24bd667-3219-4a14-a7a4-a85e30f6a6cc",
+      "name": "respuesta chat",
+      "webhookId": "26f72f80-ab38-4026-b4b4-d0a1caa8a321"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0CA0H17B7H",
+          "mode": "list",
+          "cachedResultName": "agente-leads"
+        },
+        "text": "=🤖 *Log de ejecución — Nexo (Calificador de Leads)*\n*Fecha:* {{ $now.setZone('America/Argentina/Buenos_Aires').toFormat('yyyy-MM-dd HH:mm') }}\n*Sesión:* {{ $('When chat message received').item.json.sessionId }}\n\n*👤 Mensaje del lead:*\n{{ $('When chat message received').item.json.chatInput }}\n\n*🛠️ Herramientas usadas ({{ ($('AI Agent').item.json.intermediateSteps || []).length }} pasos, límite: 7 iteraciones):*\n{{ ($('AI Agent').item.json.intermediateSteps || []).length ? $('AI Agent').item.json.intermediateSteps.map(s => '• ' + s.action.tool + ': ' + JSON.stringify(s.action.toolInput)).join('\\n') : 'Ninguna (solo conversación)' }}\n\n*💬 Respuesta del agente:*\n{{ $('AI Agent').item.json.output }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        768,
+        0
+      ],
+      "id": "fbacd61b-f932-4fb8-9a20-6cf036b70db1",
+      "name": "Log Observabilidad Slack",
+      "webhookId": "4cdcc432-57bb-4fe8-b13d-89b50f533133",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "dbnpqZC11OSTqkDu",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar Lead": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "respuesta chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "respuesta chat": {
+      "main": [
+        [
+          {
+            "node": "Log Observabilidad Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "95c22982-2e17-444e-86af-b5681eb4f322",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c6171cfca381ae38914bd1c4c3469797197b2f3a885da106735967c6051b28c7"
+  },
+  "nodeGroups": [],
+  "id": "Ly7OTjtmHwSrfPFY",
+  "tags": []
+}
