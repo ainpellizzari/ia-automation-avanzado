@@ -1,0 +1,470 @@
+{
+  "name": "M2 - Manager",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "responseMode": "responseNodes"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -144,
+        64
+      ],
+      "id": "fd6a70c1-b726-44d2-8cec-60c5172dc39d",
+      "name": "When chat message received",
+      "webhookId": "5a9b5c6b-277a-4998-b01b-ff5c4698ef09"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.data.respuesta }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1.3,
+      "position": [
+        1152,
+        -48
+      ],
+      "id": "dac2d663-c3de-4cc6-9411-5eccae006c3c",
+      "name": "respuesta chat",
+      "webhookId": "2e5f2321-b7d4-4133-a061-c5323c8954aa"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0CA0H17B7H",
+          "mode": "list",
+          "cachedResultName": "agente-leads"
+        },
+        "text": "=🤖 *Log de trazabilidad — Manager NexoFlow*\n*Fecha:* {{ $now.setZone('America/Argentina/Buenos_Aires').toFormat('yyyy-MM-dd HH:mm') }}\n*Sesión:* {{ $('When chat message received').item.json.sessionId }}\n\n*👤 Mensaje del usuario:*\n{{ $('When chat message received').item.json.chatInput }}\n\n*🧭 Worker invocado:* {{ $('Resultado Unificado').item.json.worker }}\n*📊 Estado:* {{ $('Resultado Unificado').item.json.status }}\n*🛠️ Herramientas:* {{ ($('Resultado Unificado').item.json.data.herramientas || []).join(', ') || 'Ninguna' }}\n{{ $('Resultado Unificado').item.json.message ? '*⚠️ Error:* ' + $('Resultado Unificado').item.json.message : '' }}\n\n*💬 Respuesta enviada:*\n{{ $('Resultado Unificado').item.json.data.respuesta }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        1296,
+        -48
+      ],
+      "id": "6610d313-28c4-4ba6-b57c-af1ee7170193",
+      "name": "Log Observabilidad Slack",
+      "webhookId": "fb07fcfb-ec0d-4d3a-98ce-ddb20211d6ca",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "dbnpqZC11OSTqkDu",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.chatInput }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "ventas",
+              "description": "Personas interesadas en contratar servicios de NexoFlow (automatizaciones, chatbots, agentes de IA, integraciones) que piden información, presupuesto o cotización, o que responden con datos de su empresa, nombre, email, cantidad de empleados, presupuesto o urgencia."
+            },
+            {
+              "category": "soporte",
+              "description": "Clientes que ya usan un servicio de NexoFlow y reportan una falla, un error o algo que dejó de funcionar, consultan cómo usar o configurar algo que ya tienen, o hacen un reclamo sobre el servicio."
+            }
+          ]
+        },
+        "options": {
+          "fallback": "other"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        32,
+        32
+      ],
+      "id": "647e762f-47bf-4549-a021-72c1875266d1",
+      "name": "Router de Intención",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-5-5",
+          "mode": "list",
+          "cachedResultName": "Claude Haiku 5.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        32,
+        240
+      ],
+      "id": "ec5db9bb-7e4b-4d6c-8328-46da7e2bc7d0",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "GLroA2WTJYyWsDFG",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c57e1a2c-ddb6-4486-ad11-60793c977f38",
+              "name": "sessionId",
+              "value": "={{ $('When chat message received').item.json.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "75e28f27-58e3-431c-b8e3-7d29374d867d",
+              "name": "mensaje",
+              "value": "={{ $('When chat message received').item.json.chatInput }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        416,
+        -176
+      ],
+      "id": "706a6107-5250-44df-93bc-be5c9659b0b3",
+      "name": "Contrato Ventas"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c57e1a2c-ddb6-4486-ad11-60793c977f38",
+              "name": "sessionId",
+              "value": "={{ $('When chat message received').item.json.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "75e28f27-58e3-431c-b8e3-7d29374d867d",
+              "name": "mensaje",
+              "value": "={{ $('When chat message received').item.json.chatInput }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        416,
+        -32
+      ],
+      "id": "2b8eda31-fc85-40ed-88fa-ae826e449b4f",
+      "name": "Contrato Soporte"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "r6ZyrVk2j3wmGCu5",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/r6ZyrVk2j3wmGCu5",
+          "cachedResultName": "M2 - Worker Ventas"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "sessionId": "={{ $json.sessionId }}",
+            "mensaje": "={{ $json.mensaje }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "sessionId",
+              "displayName": "sessionId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "mensaje",
+              "displayName": "mensaje",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        640,
+        -176
+      ],
+      "id": "0b0851c0-6245-4e28-b1b8-80c16d741cbb",
+      "name": "Delegar a Ventas",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "NZxVcH4rLE759nSp",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/NZxVcH4rLE759nSp",
+          "cachedResultName": "M2 - Worker Soporte"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "sessionId": "={{ $json.sessionId }}",
+            "mensaje": "={{ $json.mensaje }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "sessionId",
+              "displayName": "sessionId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "mensaje",
+              "displayName": "mensaje",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        640,
+        -32
+      ],
+      "id": "c7f5daea-8265-48a0-a574-b5f903d1fbcb",
+      "name": "Delegar a Soporte",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"status\": \"escalated\",\n  \"worker\": \"humano\",\n  \"data\": {\n    \"respuesta\": \"Te paso con un asesor de nuestro equipo, te va a contactar a la brevedad.\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        864,
+        112
+      ],
+      "id": "7b92dcc0-14da-4289-ab5d-c166373039a7",
+      "name": "Escalamiento Humano"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        -48
+      ],
+      "id": "54779f6d-edc2-4dd2-98ae-81a9a62285e6",
+      "name": "Resultado Unificado"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Router de Intención",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "respuesta chat": {
+      "main": [
+        [
+          {
+            "node": "Log Observabilidad Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Router de Intención",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router de Intención": {
+      "main": [
+        [
+          {
+            "node": "Contrato Ventas",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Contrato Soporte",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalamiento Humano",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalamiento Humano",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contrato Ventas": {
+      "main": [
+        [
+          {
+            "node": "Delegar a Ventas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contrato Soporte": {
+      "main": [
+        [
+          {
+            "node": "Delegar a Soporte",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delegar a Soporte": {
+      "main": [
+        [
+          {
+            "node": "Resultado Unificado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalamiento Humano",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delegar a Ventas": {
+      "main": [
+        [
+          {
+            "node": "Resultado Unificado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalamiento Humano",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escalamiento Humano": {
+      "main": [
+        [
+          {
+            "node": "Resultado Unificado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resultado Unificado": {
+      "main": [
+        [
+          {
+            "node": "respuesta chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "2f956a25-4280-4cdd-9fde-c75a140e81a0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c6171cfca381ae38914bd1c4c3469797197b2f3a885da106735967c6051b28c7"
+  },
+  "nodeGroups": [],
+  "id": "wae4YDP1rzX480r0",
+  "tags": []
+}
