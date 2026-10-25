@@ -105,8 +105,8 @@ Base `NexoFlow Memoria`, tabla `Memoria`, con estas columnas:
 | Módulo | Archivo | Qué se agregó |
 |---|---|---|
 | M1 · Agente base | `checkpoint1_ain_pellizzari.json` | Chat Trigger, AI Agent (Tools Agent, máx. 7 iteraciones), System Prompt modular, Google Sheets como tool con upsert, Simple Memory, log en Slack. |
-| M2 · Multi-agente | — | Pendiente |
-| M3 · Memoria | — | | M3 · Memoria | `modulo3/` | Memoria de largo plazo en Airtable por Session_ID: búsqueda al inicio, alta de usuarios nuevos, inyección del contexto en el System Prompt del agente entre delimitadores anti-inyección y actualización idempotente al final de cada turno. Desde el sexto mensaje, Claude Haiku resume la conversación en JSON (asunto_principal, puntos_clave, accion_requerida). Incluye detección temprana del nombre y enrutamiento con contexto. | |
+| M2 · Multi-agente | `modulo2/` | Manager con router (Text Classifier, taxonomía VENTAS / SOPORTE / Other) que delega por Execute Workflow a dos Workers: Ventas (agente Nexo del M1) y Soporte (clasificación con IA, ticket y alerta urgente). Contratos JSON de entrada y salida, rutas de error, timeouts y log de trazabilidad en Slack. |
+| M3 · Memoria | `modulo3/` | Memoria de largo plazo en Airtable por Session_ID: búsqueda al inicio, alta de usuarios nuevos, inyección del contexto en el System Prompt del agente entre delimitadores anti-inyección y actualización idempotente al final de cada turno. Desde el sexto mensaje, Claude Haiku resume la conversación en JSON (asunto_principal, puntos_clave, accion_requerida). Incluye detección temprana del nombre y enrutamiento con contexto. |
 | M4 · Integraciones | — | Pendiente |
 | M5 · RAG | — | Pendiente |
 | M6 · Voz | — | Pendiente |
