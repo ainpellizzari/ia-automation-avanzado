@@ -71,6 +71,20 @@ Además se necesita:
 
 > El `.json` exportado **no contiene** API keys ni tokens: solo referencias a las credenciales. Hay que crearlas en tu propia instancia.
 
+| Airtable | Memoria de largo plazo del agente (M3) | **Airtable OAuth2** o Personal Access Token con permisos `data.records:read`, `data.records:write` y `schema.bases:read` |
+### Base de memoria (desde M3)
+
+Base `NexoFlow Memoria`, tabla `Memoria`, con estas columnas:
+
+| Columna | Tipo |
+|---|---|
+| Session_ID | Single line text (campo principal) |
+| Nombre | Single line text |
+| Fecha de actualización | Date con hora |
+| Resumen consolidado | Long text |
+| Estado del caso | Single select: Nuevo, En calificación, Lead registrado, Ticket abierto, Escalado |
+| Datos clave | Long text |
+| Mensajes | Number (entero) |
 ---
 
 ## Cómo importar y poner en marcha
@@ -92,7 +106,7 @@ Además se necesita:
 |---|---|---|
 | M1 · Agente base | `checkpoint1_ain_pellizzari.json` | Chat Trigger, AI Agent (Tools Agent, máx. 7 iteraciones), System Prompt modular, Google Sheets como tool con upsert, Simple Memory, log en Slack. |
 | M2 · Multi-agente | — | Pendiente |
-| M3 · Memoria | — | Pendiente |
+| M3 · Memoria | — | | M3 · Memoria | `modulo3/` | Memoria de largo plazo en Airtable por Session_ID: búsqueda al inicio, alta de usuarios nuevos, inyección del contexto en el System Prompt del agente entre delimitadores anti-inyección y actualización idempotente al final de cada turno. Desde el sexto mensaje, Claude Haiku resume la conversación en JSON (asunto_principal, puntos_clave, accion_requerida). Incluye detección temprana del nombre y enrutamiento con contexto. | |
 | M4 · Integraciones | — | Pendiente |
 | M5 · RAG | — | Pendiente |
 | M6 · Voz | — | Pendiente |
