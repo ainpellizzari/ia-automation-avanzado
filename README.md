@@ -102,12 +102,14 @@ Base `NexoFlow Memoria`, tabla `Memoria`, con estas columnas:
 
 ## Historial de checkpoints
 
+## Historial de checkpoints
+
 | Módulo | Archivos | Qué se agregó |
 |---|---|---|
 | M1 · Agente base | `checkpoint1_ain_pellizzari.json` | Chat Trigger, AI Agent (Tools Agent, máx. 7 iteraciones), System Prompt modular, Google Sheets como tool con upsert, Simple Memory, log en Slack. |
-| M2 · Multi-agente | `modulo2/manager_modulo2_pellizzari_ain.json`<br>`modulo2/worker1_pellizzari_ain.json` (Ventas)<br>`modulo2/worker2_pellizzari_ain.json` (Soporte)<br>`modulo2/preentrega_modulo2_pellizzari_ain.pdf` | Manager con router (Text Classifier, taxonomía VENTAS / SOPORTE / Other) que delega por Execute Workflow a dos Workers: Ventas (agente Nexo del M1) y Soporte (clasificación con IA, ticket y alerta urgente). Contratos JSON de entrada y salida, rutas de error, timeouts y log de trazabilidad en Slack. |
-| M3 · Memoria | `modulo3/manager_modulo3_pellizzari_ain.json`<br>`modulo3/worker_ventas_modulo3_pellizzari_ain.json`<br>`modulo3/PreEntrega_Modulo3_AinPellizzari.pdf`<br>Reutiliza `modulo2/worker2_pellizzari_ain.json` (Soporte, sin cambios) | Memoria de largo plazo en Airtable por Session_ID: búsqueda al inicio, alta de usuarios nuevos, inyección del contexto en el System Prompt del agente entre delimitadores anti-inyección y actualización idempotente al final de cada turno. Desde el sexto mensaje, Claude Haiku resume la conversación en JSON (asunto_principal, puntos_clave, accion_requerida). Incluye detección temprana del nombre y enrutamiento con contexto. |
-| M4 · Integraciones | `modulo4/checkpoint4_ain_pellizzari.json`<br>`modulo4/README.md` | Canal de email: Gmail Trigger con filtro anti auto-reply, limpieza y validación del payload, Agente de Correo (clasificación + borrador), Look up en HubSpot antes de crear o actualizar (con validación cruzada), borrador Human-in-the-loop y aviso a Slack con payload mínimo. Integraciones por OAuth2 con mínimo privilegio. |
+| M2 · Multi-agente | [`Modulo 2/`](Modulo%202/) | Manager con router (Text Classifier, taxonomía VENTAS / SOPORTE / Other) que delega por Execute Workflow a dos Workers: Ventas (agente Nexo del M1) y Soporte (clasificación con IA, ticket y alerta urgente). Contratos JSON de entrada y salida, rutas de error, timeouts y log de trazabilidad en Slack. |
+| M3 · Memoria | [`Modulo 3/`](Modulo%203/) | Memoria de largo plazo en Airtable por Session_ID: búsqueda al inicio, alta de usuarios nuevos, inyección del contexto en el System Prompt entre delimitadores anti-inyección y actualización idempotente al final de cada turno. Desde el sexto mensaje, Claude Haiku resume la conversación en JSON (asunto_principal, puntos_clave, accion_requerida). Reutiliza el Worker Soporte del M2. |
+| M4 · Integraciones | [`Modulo 4/`](Modulo%204/) | Canal de email: Gmail Trigger con filtro anti auto-reply, limpieza y validación del payload, Agente de Correo (clasificación y borrador), Look up en HubSpot antes de crear o actualizar (con validación cruzada), borrador Human-in-the-loop y aviso a Slack con payload mínimo. Integraciones por OAuth2 con mínimo privilegio. |
 | M5 · RAG | — | Pendiente |
 | M6 · Voz | — | Pendiente |
 
