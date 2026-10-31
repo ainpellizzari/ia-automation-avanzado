@@ -1,0 +1,285 @@
+{
+  "name": "M5 - Carga de Conocimiento",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "64d955dd-9693-46fe-91bc-9ba1df437160",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://raw.githubusercontent.com/ainpellizzari/ia-automation-avanzado/main/Modulo%205/Manual_NexoFlow_v1_limpio.md",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        144,
+        0
+      ],
+      "id": "ff7d78eb-03b4-4a51-9e76-5447a04e2df7",
+      "name": "Leer Manual"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "secciones",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1.1,
+      "position": [
+        432,
+        0
+      ],
+      "id": "7df298c2-824c-4054-a193-457e6d6ccf1a",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1816b274-4a75-41cc-8066-f8c32880a2f3",
+              "name": "texto",
+              "value": "={{ $json.secciones }}",
+              "type": "string"
+            },
+            {
+              "id": "7b02bf21-681d-44c4-98e1-034deb6eb7e1",
+              "name": "seccion",
+              "value": "={{ $json.secciones.split('\\n')[0].replace(/^#+\\s*/, '') }}",
+              "type": "string"
+            },
+            {
+              "id": "51e073ea-0c55-43b1-bd86-aa09d41c3314",
+              "name": "fuente",
+              "value": "Manual_NexoFlow_v1",
+              "type": "string"
+            },
+            {
+              "id": "65518b0e-e1dd-4b3d-94eb-4f050e16c657",
+              "name": "version",
+              "value": "1.0",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        576,
+        0
+      ],
+      "id": "7ab69ee5-4589-4401-8aa6-d6f2efbb1068",
+      "name": "Preparar Fragmento"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "nexoflow-manual",
+          "mode": "list",
+          "cachedResultName": "nexoflow-manual"
+        },
+        "options": {
+          "clearNamespace": true,
+          "pineconeNamespace": "manual"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        720,
+        0
+      ],
+      "id": "3d2596e0-2fec-4216-bcbd-9e59b26c77ce",
+      "name": "Guardar en Pinecone",
+      "credentials": {
+        "pineconeApi": {
+          "id": "RNnZVu5n7LDTV3Pu",
+          "name": "Pinecone NexoFlow"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        720,
+        176
+      ],
+      "id": "9d02cf65-da53-40b6-abc5-58cb8789cf7f",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "yCH4Nt1XcneHBm1x",
+          "name": "Gemini Embeddings"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.texto }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "seccion",
+                "value": "={{ $json.seccion }}"
+              },
+              {
+                "name": "fuente",
+                "value": "={{ $json.fuente }}"
+              },
+              {
+                "name": "version",
+                "value": "={{ $json.version }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        896,
+        176
+      ],
+      "id": "6366d62e-239f-4cb0-96b3-ec46f1d3c9c4",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dd50239b-c864-4173-bb9a-15149ac5f5f1",
+              "name": "secciones",
+              "value": "={{ $json.data.split(/\\n(?=#{2,3} )/).filter(s => !s.startsWith('# ') && s.split('\\n').slice(1).join(' ').trim().length > 40) }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        288,
+        0
+      ],
+      "id": "f38f3e1a-a83c-4f96-9d79-2a0f994c216d",
+      "name": "Separar Secciones"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Leer Manual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Manual": {
+      "main": [
+        [
+          {
+            "node": "Separar Secciones",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Preparar Fragmento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Fragmento": {
+      "main": [
+        [
+          {
+            "node": "Guardar en Pinecone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Guardar en Pinecone",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Guardar en Pinecone",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separar Secciones": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a533bffe-d2f1-472f-82b5-8d3c99271eb0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c6171cfca381ae38914bd1c4c3469797197b2f3a885da106735967c6051b28c7"
+  },
+  "nodeGroups": [],
+  "id": "j67y1toWaeP5KelY",
+  "tags": []
+}
