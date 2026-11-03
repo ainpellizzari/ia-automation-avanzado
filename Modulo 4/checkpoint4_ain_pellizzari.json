@@ -19,8 +19,8 @@
       "type": "n8n-nodes-base.gmailTrigger",
       "typeVersion": 1.4,
       "position": [
-        224,
-        0
+        -16,
+        128
       ],
       "id": "7b2f36ff-cf5d-4407-85bb-65530f489590",
       "name": "Correo Entrante",
@@ -123,8 +123,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.4,
       "position": [
-        448,
-        0
+        208,
+        128
       ],
       "id": "35b7ad13-03a3-48f0-9cf0-60f03f3d43ff",
       "name": "¿Es automático?"
@@ -134,8 +134,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        656,
-        -128
+        416,
+        0
       ],
       "id": "ac7c7cf2-8f0d-42aa-8d89-408c6df2d7e8",
       "name": "Ignorar (auto-reply)"
@@ -181,8 +181,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
       "position": [
-        656,
-        80
+        416,
+        208
       ],
       "id": "d2618b3b-7c11-4ac6-ac5c-de6cec69c84f",
       "name": "Limpiar Payload"
@@ -224,8 +224,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.4,
       "position": [
-        864,
-        80
+        624,
+        208
       ],
       "id": "b3a3f004-9a64-4625-a375-9d4645a986ca",
       "name": "¿Email válido?"
@@ -235,8 +235,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1024,
-        176
+        704,
+        288
       ],
       "id": "00aadf0e-1dba-45af-9d58-b3fdcd0b6094",
       "name": "Ignorar (payload inválido)"
@@ -253,8 +253,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        1040,
-        -112
+        800,
+        16
       ],
       "id": "29c5895a-23b8-409f-ad70-81389e83da88",
       "name": "Agente de Correo",
@@ -273,8 +273,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.6,
       "position": [
-        1040,
-        32
+        800,
+        160
       ],
       "id": "2af65876-7634-48b6-acfa-e3c67169f244",
       "name": "Anthropic Chat Model",
@@ -294,8 +294,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
       "position": [
-        1344,
-        -160
+        1104,
+        -32
       ],
       "id": "dfc6b143-0917-4168-b7f5-386e2b9a04c3",
       "name": "Datos del Agente",
@@ -611,6 +611,68 @@
       ],
       "id": "9f5611fd-fe62-4752-8386-d6e40ec45d1c",
       "name": "¿Contacto existe?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "4a4db78c-9671-46ff-946e-028505a48d19",
+              "leftValue": "={{ $json.categoria }}",
+              "rightValue": "^(VENTAS|SOPORTE|OTRO)$",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            },
+            {
+              "id": "815711b5-c891-49f4-8862-9a226e6b8f3a",
+              "leftValue": "={{ $json.prioridad }}",
+              "rightValue": "^(ALTA|MEDIA|BAJA)$",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            },
+            {
+              "id": "a1d697cd-229c-400a-9fdd-bfcb1961841c",
+              "leftValue": "={{ $json.resumen }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "cdd6350a-904b-4178-8a5f-d1162826e37c",
+              "leftValue": "={{ $json.borrador_respuesta }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        1280,
+        -144
+      ],
+      "id": "44cfa06f-9790-4496-9d47-3c42a3d55fe7",
+      "name": "¿Respuesta del Agente válida?"
     }
   ],
   "pinData": {},
@@ -706,7 +768,7 @@
       "main": [
         [
           {
-            "node": "¿Va al CRM?",
+            "node": "¿Respuesta del Agente válida?",
             "type": "main",
             "index": 0
           }
@@ -810,6 +872,24 @@
           }
         ]
       ]
+    },
+    "¿Respuesta del Agente válida?": {
+      "main": [
+        [
+          {
+            "node": "¿Va al CRM?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alerta de Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -821,7 +901,7 @@
     "executionTimeout": 120,
     "availableInMCP": false
   },
-  "versionId": "d2617117-b282-4547-9f0a-a20cb8f24a8f",
+  "versionId": "17fd88aa-cd95-4d71-a19f-f295819f755c",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "c6171cfca381ae38914bd1c4c3469797197b2f3a885da106735967c6051b28c7"
