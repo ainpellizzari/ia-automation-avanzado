@@ -1,117 +1,94 @@
-# Nexo — Agente Calificador de Leads (n8n + Claude)
+# Nexo · Sistema de agentes de IA para NexoFlow (n8n)
 
-Proyecto integrador del curso **AI Automation Avanzado**. Es un agente de IA construido en n8n que conversa con potenciales clientes de **NexoFlow** (agencia ficticia de automatizaciones e IA para pymes), los califica como CALIENTE, TIBIO o FRÍO, los registra en Google Sheets y reporta cada ejecución en Slack para supervisión humana.
+Proyecto integrador del curso **AI Automation Avanzado** (Coderhouse). Es un sistema de agentes de IA construido en n8n para **NexoFlow**, una agencia ficticia de automatizaciones e IA para pymes. El sistema atiende consultas comerciales y de soporte por chat, correo y Telegram (voz o texto), califica leads, mantiene ordenado el CRM, responde solo con información verificada del manual de la empresa y somete sus respuestas a un supervisor de calidad antes de enviarlas.
 
-El proyecto evoluciona módulo a módulo: cada checkpoint parte del `.json` anterior y le suma nodos nuevos.
-
----
-
-## Caso de uso
-
-Una pyme que vende servicios recibe consultas de posibles clientes. En lugar de que una persona responda y filtre cada una, el agente:
-
-1. Conversa con el lead y recolecta 7 datos en unos 3 mensajes: nombre, empresa y rubro, cantidad de empleados, necesidad, presupuesto, urgencia y email.
-2. Clasifica al lead según criterios definidos:
-   - **CALIENTE:** necesidad clara, presupuesto definido y urgencia menor a 1 mes.
-   - **TIBIO:** necesidad clara, pero sin presupuesto definido o sin urgencia.
-   - **FRÍO:** está explorando, sin necesidad concreta.
-3. Decide por sí mismo cuándo registrar al lead en una planilla (sin duplicarlo: si el email ya existe, actualiza la fila).
-4. Deja un log en Slack con lo que pidió el lead, qué herramientas usó el agente y qué respondió.
-
-El agente **no** inventa precios, no promete reuniones, no pide datos sensibles y escala a un humano ante reclamos, pedidos de hablar con una persona o proyectos fuera de alcance.
+El proyecto evolucionó módulo a módulo: cada checkpoint parte del anterior y le suma una capacidad nueva. Cada carpeta tiene su propio README, los `.json` de los workflows y la documentación entregada.
 
 ---
 
-## Arquitectura
+## Qué resuelve
+
+Una pyme de servicios recibe consultas de posibles clientes y de clientes actuales por varios canales. Responderlas a mano lleva horas por semana, las consultas fuera de horario esperan al día siguiente y el CRM se llena de duplicados. Nexo:
+
+1. **Responde al instante, a cualquier hora**, por chat, correo o Telegram, en el mismo formato en que le hablan (audio o texto).
+2. **Califica cada lead** (CALIENTE, TIBIO o FRÍO) y lo registra sin duplicarlo.
+3. **Responde solo con el manual oficial**, cita la fuente y dice "No sé" cuando el dato no figura.
+4. **Recuerda a cada usuario** entre conversaciones.
+5. **Deja los correos como borrador** para que una persona los revise antes de enviar.
+6. **Pasa cada respuesta por un Juez de calidad** y escala a una persona en Slack cuando hay riesgo.
+
+---
+
+## Arquitectura actual
 
 ```
-[When chat message received] → [AI Agent] → [Respond to Chat] → [Log Observabilidad Slack]
-                                   ├─ Anthropic Chat Model   (cerebro)
-                                   ├─ Simple Memory          (contexto de la sesión)
-                                   └─ Registrar Lead         (tool: Google Sheets)
+                ┌─ Chat web ──────────┐
+Señales ────────┼─ Correo (Gmail) ────┼──▶ Validación determinista (anti auto-reply, limpieza, IF)
+                └─ Telegram voz/texto ┘
+                              │
+                              ▼
+                 [Manager: memoria Airtable + Router de intención]
+                     ├─ Worker Ventas ──▶ RAG (Pinecone) · Registrar Lead · HubSpot
+                     ├─ Worker Soporte
+                     └─ Escalamiento humano
+                              │
+                              ▼
+                 [Supervisor Juez: Gemini + JSON Schema + validación por código]
+                     ├─ ACEPTADO  ──▶ respuesta al cliente
+                     ├─ CORREGIR  ──▶ el agente reintenta con la crítica (máx. 2)
+                     └─ RECHAZADO ──▶ Slack con Aprobar / Editar
+                              │
+                              ▼
+                 Registro de cada decisión (Google Sheets / Slack)
 ```
-
-- **Línea principal (determinista):** se ejecuta siempre, en el mismo orden. Recibe el mensaje, responde al usuario y genera el log.
-- **Conexiones laterales (probabilísticas):** el agente decide en cada vuelta del ciclo ReAct (razonar → actuar → observar) si usa la herramienta. La herramienta nunca está en la línea principal.
-
-### Nodos utilizados
-
-| Nodo | Tipo | Función |
-|---|---|---|
-| When chat message received | Chat Trigger | Puerta de entrada. `Response Mode = Using Response Nodes` para que la respuesta al usuario la dé un nodo específico. |
-| AI Agent | Tools Agent | Motor de razonamiento. System Message modular, **Max Iterations = 7** y **Return Intermediate Steps = ON**. |
-| Anthropic Chat Model | Language Model | Modelo Claude (Sonnet). |
-| Simple Memory | Memory | Recuerda la conversación dentro de la sesión, para juntar datos aportados en distintos mensajes. |
-| Registrar Lead | Google Sheets Tool | Operación `Append or Update Row`, columna de coincidencia `Email` (upsert). Campos completados con `$fromAI()`; la fecha la pone n8n con `$now`. |
-| Respond to Chat | Chat | Devuelve al usuario la respuesta del agente (`{{ $json.output }}`). |
-| Log Observabilidad Slack | Slack | Envía al canal `#agente-leads` fecha, sesión, mensaje del lead, herramientas usadas (`intermediateSteps`) y respuesta del agente. |
-
-### Guardrails
-
-- **Max Iterations = 7:** techo de vueltas del ciclo ReAct para evitar bucles y blindar el costo.
-- **Mínimo privilegio:** la herramienta solo puede crear o actualizar filas, nunca borrar.
-- **System Message** estructurado en Rol → Ámbito → Objetivo → Uso de herramientas → Reglas → Escalamiento, con prohibiciones explícitas para reducir alucinaciones.
-- **Descripción semántica de la tool** que indica cuándo usarla, cuándo no, qué datos enviar y cómo interpretar el resultado.
 
 ---
 
-## Requisitos y credenciales
+## Historial de checkpoints
 
-| Servicio | Para qué | Credencial en n8n |
+| Módulo | Carpeta | Qué se agregó |
 |---|---|---|
-| Anthropic | Modelo de lenguaje | **Anthropic API** (API key de console.anthropic.com, con crédito cargado) |
-| Google Sheets | Registro de leads | **Google Sheets OAuth2** (en n8n Cloud: "Sign in with Google") |
-| Slack | Log de observabilidad | **Slack OAuth2** (conectar el workspace) |
+| M1 · Agente base | [`Modulo 1/`](Modulo%201/) | Chat Trigger, AI Agent (Tools Agent, máx. 7 iteraciones), System Prompt modular, Google Sheets como herramienta con upsert por email, Simple Memory y log de observabilidad en Slack. |
+| M2 · Multi-agente | [`Modulo 2/`](Modulo%202/) | Patrón Manager-Worker: un Router de intención deriva a sub-workflows especializados (Ventas y Soporte) con un contrato de datos fijo, y escala a un humano ante errores o pedidos fuera de alcance. |
+| M3 · Memoria | [`Modulo 3/`](Modulo%203/) | Memoria persistente en Airtable por sesión: nombre, estado del caso y resumen consolidado cada 5 mensajes, inyectados entre delimitadores para evitar prompt injection. |
+| M4 · Integraciones | [`Modulo 4/`](Modulo%204/) | Canal de correo: Gmail → filtro anti auto-reply → limpieza del payload → agente que clasifica y redacta → validación de la respuesta → HubSpot (Look up antes de crear) → borrador en Gmail para revisión humana → aviso en Slack. |
+| M5 · RAG | [`Modulo 5/`](Modulo%205/) | Base de conocimiento: manual oficial parseado con LlamaParse, fragmentado por sección e indexado en Pinecone con embeddings de Gemini. Top-K 4 y Minimum Score 0,70 calibrado en tres rondas; cita obligatoria y "No sé" si el dato no figura. Validación ciega: 5/5. |
+| M6 · Voz | [`Modulo 6/`](Modulo%206/) | Canal de Telegram multimodal: nota de voz → Whisper (Groq) → IF de contingencia calibrado con no_speech_prob y avg_logprob → agente con el RAG → respuesta hablada con ElevenLabs, o escrita si el usuario escribe. Aviso de escalamiento a Slack. Compliance: el audio no se almacena. 7/7 pruebas. |
+| M7 · Diseño vertical | [`Modulo 7/`](Modulo%207/) | Informe de consultoría de 4 páginas: especialización del sistema para Sales Ops y Customer Success, con baseline, priorización ponderada, red de 6 agentes con contratos JSON, mapa de permisos, KPIs, semáforo de riesgo con HITL, especificación de prueba y scorecards. |
+| M8 · QA | [`Modulo 8/`](Modulo%208/) | Supervisor AI-as-a-Judge: Juez Gemini con JSON Schema, validación por código y Switch de 3 rutas (aceptar, corregir con hasta 2 reintentos o escalar a Slack). Prueba A/B Sonnet 5.5 vs Haiku 5.5 (100% vs 80% de precisión; USD 23,94 vs 4,48 cada 1.000 consultas) y ciclo de mejora sobre la búsqueda RAG. |
 
-Además se necesita:
+---
 
-- Una planilla de Google Sheets con estos encabezados en la fila 1 (A a J):
-  `Fecha | Nombre | Email | Empresa | Rubro | Empleados | Necesidad | Presupuesto | Urgencia | Clasificacion`
-- Un canal de Slack (por ejemplo `#agente-leads`).
+## Guardrails del sistema
 
-> El `.json` exportado **no contiene** API keys ni tokens: solo referencias a las credenciales. Hay que crearlas en tu propia instancia.
-
-| Airtable | Memoria de largo plazo del agente (M3) | **Airtable OAuth2** o Personal Access Token con permisos `data.records:read`, `data.records:write` y `schema.bases:read` |
-### Base de memoria (desde M3)
-
-Base `NexoFlow Memoria`, tabla `Memoria`, con estas columnas:
-
-| Columna | Tipo |
+| Riesgo | Control |
 |---|---|
-| Session_ID | Single line text (campo principal) |
-| Nombre | Single line text |
-| Fecha de actualización | Date con hora |
-| Resumen consolidado | Long text |
-| Estado del caso | Single select: Nuevo, En calificación, Lead registrado, Ticket abierto, Escalado |
-| Datos clave | Long text |
-| Mensajes | Number (entero) |
----
-
-## Cómo importar y poner en marcha
-
-1. En n8n, creá un workflow nuevo, abrí el menú `···` y elegí **Import from File**. Seleccioná el `.json` del checkpoint.
-2. Creá las tres credenciales (Anthropic, Google Sheets, Slack) y asignalas en cada nodo.
-3. En **Registrar Lead**, elegí tu planilla y hoja, y verificá que la columna de coincidencia sea `Email`.
-4. En **Log Observabilidad Slack**, elegí tu canal. Si da `not_in_channel`, invitá la app de n8n al canal con `/invite`.
-5. En **Anthropic Chat Model**, elegí el modelo disponible en tu cuenta.
-6. Probá desde **Open chat** con un mensaje como:
-   > Hola, soy Martina López de Casa Sur, una inmobiliaria de Rosario con 8 empleados. Queremos automatizar las consultas que nos llegan por WhatsApp, tenemos unos 1500 USD y lo necesitamos este mes. Mi mail es martina@casasur.com
-7. Verificá: todo el lienzo en verde, la fila en la planilla con clasificación CALIENTE y el log en Slack.
+| Bucles y costo descontrolado | Máximo de iteraciones por agente, máximo 2 reintentos de corrección, techo de caracteres antes de la síntesis de voz |
+| Datos inventados | RAG con Minimum Score calibrado, cita obligatoria, "No sé" literal y un Juez que compara la respuesta con los fragmentos recuperados |
+| Prompt injection | Delimitadores en memoria y mensajes, Router que escala pedidos sospechosos y regla de seguridad en el Juez |
+| Correos en bucle | Filtro anti auto-reply antes del agente |
+| Duplicados en el CRM | Upsert por email y Look up antes de crear |
+| Acciones irreversibles | Mínimo privilegio: ningún workflow borra registros ni envía correos solo; los correos quedan como borrador |
+| Supervisor que falla | Si el Juez no responde o no recibe datos, la respuesta va a revisión humana |
+| Datos personales | La voz no se guarda: ejecuciones sin guardar y Zero Data Retention en el proveedor de transcripción |
 
 ---
 
-## Historial de checkpoints
+## Stack
 
-## Historial de checkpoints
+n8n Cloud · Claude (Anthropic) · Gemini (embeddings y Juez) · Pinecone · LlamaParse · Airtable · Google Sheets · Gmail · HubSpot · Slack · Telegram · Whisper (Groq) · ElevenLabs.
 
-| Módulo | Archivos | Qué se agregó |
-|---|---|---|
-| M1 · Agente base | `checkpoint1_ain_pellizzari.json` | Chat Trigger, AI Agent (Tools Agent, máx. 7 iteraciones), System Prompt modular, Google Sheets como tool con upsert, Simple Memory, log en Slack. |
-| M2 · Multi-agente | [`Modulo 2/`](Modulo%202/) | Manager con router (Text Classifier, taxonomía VENTAS / SOPORTE / Other) que delega por Execute Workflow a dos Workers: Ventas (agente Nexo del M1) y Soporte (clasificación con IA, ticket y alerta urgente). Contratos JSON de entrada y salida, rutas de error, timeouts y log de trazabilidad en Slack. |
-| M3 · Memoria | [`Modulo 3/`](Modulo%203/) | Memoria de largo plazo en Airtable por Session_ID: búsqueda al inicio, alta de usuarios nuevos, inyección del contexto en el System Prompt entre delimitadores anti-inyección y actualización idempotente al final de cada turno. Desde el sexto mensaje, Claude Haiku resume la conversación en JSON (asunto_principal, puntos_clave, accion_requerida). Reutiliza el Worker Soporte del M2. |
-| M4 · Integraciones | [`Modulo 4/`](Modulo%204/) | Canal de email: Gmail Trigger con filtro anti auto-reply, limpieza y validación del payload, Agente de Correo (clasificación y borrador), Look up en HubSpot antes de crear o actualizar (con validación cruzada), borrador Human-in-the-loop y aviso a Slack con payload mínimo. Integraciones por OAuth2 con mínimo privilegio. |
-| M5 · RAG | [`Modulo 5/`](Modulo%205/) | Base de conocimiento: manual oficial parseado con LlamaParse, fragmentado por sección (31 fragmentos con metadatos de fuente) e indexado en Pinecone con embeddings de Gemini. Nexo consulta el manual con una herramienta (sub-workflow) que aplica Top-K 4 y Minimum Score 0.70, calibrado en tres rondas; responde solo con los fragmentos, cita la fuente y dice "No sé" si el dato no figura. Validación ciega: 5/5. Incluye plan de gobernanza. Reutiliza el Worker Soporte del M2. |
-| M6 · Voz | [`Modulo 6/`](Modulo%206/) | Canal de voz por Telegram: nota de voz → Whisper (Groq, whisper-large-v3) → IF de contingencia calibrado con no_speech_prob y avg_logprob (Whisper inventa texto ante el silencio) → agente "Nexo" con la herramienta RAG del M5 → respuesta hablada con ElevenLabs y la fuente escrita debajo del audio. Reglas de voz: máximo 200 caracteres, sin links ni emojis. Prompt iterado con pruebas de conversaciones reales. Compliance: el audio no se almacena (ejecuciones sin guardar). Costo adicional: cero. |
+Todos los servicios, salvo Anthropic, se usan en planes gratuitos.
+
+---
+
+## Cómo usar este repositorio
+
+1. Entrá a la carpeta del módulo que te interese y leé su README.
+2. En n8n, **Create workflow → ··· → Import from File** con cada `.json` de la carpeta.
+3. Creá tus propias credenciales: los `.json` **no contienen** API keys ni tokens, solo referencias por nombre.
+4. Publicá primero los sub-workflows (Workers, búsqueda en el manual y Juez), porque n8n no permite llamar sub-workflows sin publicar.
+
 ---
 
 **Autor:** Ain Pellizzari · Curso AI Automation Avanzado
