@@ -1,0 +1,524 @@
+{
+  "name": "M2 - Worker Soporte",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "sessionId"
+            },
+            {
+              "name": "mensaje"
+            },
+            {
+              "name": "traceId"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -336,
+        -16
+      ],
+      "id": "90a13bfb-1225-4afe-87c0-0a7ebcf0287c",
+      "name": "When Executed by Another Workflow",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1jWzn8Y-5w-fzbuhobGqYZCs8JPGoh61oDAeaqaFTHWk",
+          "mode": "list",
+          "cachedResultName": "Leads NexoFlow",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1jWzn8Y-5w-fzbuhobGqYZCs8JPGoh61oDAeaqaFTHWk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1587735407,
+          "mode": "list",
+          "cachedResultName": "Tickets",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1jWzn8Y-5w-fzbuhobGqYZCs8JPGoh61oDAeaqaFTHWk/edit#gid=1587735407"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fecha ": "={{ $now.setZone('America/Argentina/Buenos_Aires').toFormat('yyyy-MM-dd HH:mm') }}",
+            "Ticket ": "={{ $execution.id }}",
+            " Sesion ": "={{ $('When Executed by Another Workflow').item.json.sessionId }}",
+            "Mensaje": "={{ $('When Executed by Another Workflow').item.json.mensaje }}",
+            "Categoria": "={{ $json.output.categoria }}",
+            "Prioridad": "={{ $json.output.prioridad }}",
+            "Resumen": "={{ $json.output.resumen }}",
+            "Estado": "Abierto"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Fecha ",
+              "displayName": "Fecha ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ticket ",
+              "displayName": "Ticket ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": " Sesion ",
+              "displayName": " Sesion ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Mensaje",
+              "displayName": "Mensaje",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": " Estado",
+              "displayName": " Estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Categoria",
+              "displayName": "Categoria",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Prioridad",
+              "displayName": "Prioridad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Resumen",
+              "displayName": "Resumen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        240,
+        -48
+      ],
+      "id": "030e7df8-6c1c-41bf-96fd-b955c335b636",
+      "name": "Crear Ticket",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "2pV7WeuNCrtkA8az",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.mensaje }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "categoria",
+              "description": "Tipo de pedido. Solo uno de estos valores: FALLA_TECNICA, CONSULTA_USO, RECLAMO_SERVICIO",
+              "required": true
+            },
+            {
+              "name": "prioridad",
+              "description": " Nivel de urgencia. Solo uno de estos valores: ALTA, MEDIA o BAJA. ALTA: únicamente si el servicio está caído, no funciona o el cliente expresa enojo o pérdidas. MEDIA: hay un problema que no bloquea la operación. BAJA: preguntas de uso, configuración o dudas generales sin ningún problema.",
+              "required": true
+            },
+            {
+              "name": "resumen",
+              "description": "El pedido resumido en una frase de máximo 15 palabras",
+              "required": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        -80,
+        -32
+      ],
+      "id": "01ffd538-f63b-455b-aa32-8cd0eea750b3",
+      "name": "Clasificar Ticket",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-5-5",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 5.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        -80,
+        144
+      ],
+      "id": "90b159c4-a8c7-423b-b210-8d8e4dd6114d",
+      "name": "Anthropic Chat Model",
+      "notesInFlow": false,
+      "credentials": {
+        "anthropicApi": {
+          "id": "EcJN360NqLZTO8vS",
+          "name": "Anthropic DEV"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "09a18268-cddb-417f-885b-328931e05638",
+              "leftValue": "={{ $('Clasificar Ticket').item.json.output.prioridad }}",
+              "rightValue": "ALTA",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        -80
+      ],
+      "id": "095baa1a-c769-4159-b637-5e34efd61ff2",
+      "name": "¿Urgente?"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0CBLP8P3C3",
+          "mode": "list",
+          "cachedResultName": "soporte"
+        },
+        "text": "=   🚨 *Ticket urgente #{{ $execution.id }}*\n   *Categoría:* {{ $('Clasificar Ticket').item.json.output.categoria }}\n   *Resumen:* {{ $('Clasificar Ticket').item.json.output.resumen }}\n   *Mensaje original:* {{ $('When Executed by Another Workflow').item.json.mensaje }}\n   *🔗 traceId:* {{ $('When Executed by Another Workflow').item.json.traceId }}\n   ",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        576,
+        -208
+      ],
+      "id": "9d94db0b-2c85-46bd-a92d-12fe9b98a7ea",
+      "name": "Alerta Humano",
+      "webhookId": "83099b59-7c8e-4208-a21a-7c32dbd8472b",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "dbnpqZC11OSTqkDu",
+          "name": "Slack Operaciones"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ JSON.stringify({\n  status: 'success',\n  worker: 'soporte',\n  traceId: $('When Executed by Another Workflow').item.json.traceId,\n  data: {\n    ticket: String($execution.id),\n    categoria: $('Clasificar Ticket').item.json.output.categoria,\n    prioridad: $('Clasificar Ticket').item.json.output.prioridad,\n    consulta_comercial: /precio|cuesta|cu[aá]nto|mejorar|contratar|presupuesto|abono|cambiar de plan/i.test($('When Executed by Another Workflow').item.json.mensaje),\n    respuesta: 'Registramos tu consulta con el ticket #' + $execution.id\n      + ($('Clasificar Ticket').item.json.output.prioridad === 'ALTA' ? ' y la marcamos como urgente' : '')\n      + '. Un técnico de nuestro equipo te va a contactar a la brevedad.'\n      + (/precio|cuesta|cu[aá]nto|mejorar|contratar|presupuesto|abono|cambiar de plan/i.test($('When Executed by Another Workflow').item.json.mensaje) ? ' Tu consulta sobre planes y precios se la pasamos a un asesor comercial, que te va a escribir por separado.' : '')\n  }\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1040,
+        48
+      ],
+      "id": "778a8fb6-7442-44ba-ae28-1c93fad4ebd3",
+      "name": "Contrato OK"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"status\": \"error\",\n  \"worker\": \"soporte\",\n  \"traceId\": \"{{ $('When Executed by Another Workflow').item.json.traceId }}\",\n  \"message\": {{ JSON.stringify(String($json.error?.message || $json.error || 'Fallo al registrar el ticket')) }},\n  \"data\": {\n    \"respuesta\": \"Tuvimos un problema técnico al registrar tu consulta. Ya avisamos a un asesor para que te contacte.\"\n  }\n}",
+        "options": {
+          "dotNotation": false
+        }
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        432,
+        144
+      ],
+      "id": "3d24fb0f-8b61-4ec1-9bc5-2af82cfed1e9",
+      "name": "Contrato ERROR"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "c0433f49-03a6-4d06-b280-a3f44ef2e1a2",
+              "leftValue": "={{ /precio|cuesta|cu[aá]nto|mejorar|contratar|presupuesto|abono|cambiar de plan/i.test($('When Executed by Another Workflow').item.json.mensaje) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        704,
+        0
+      ],
+      "id": "36032d20-d199-47af-b7f1-7c33c87609c0",
+      "name": "¿Consulta comercial?"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0CCQ8R2REF",
+          "mode": "list",
+          "cachedResultName": "operaciones"
+        },
+        "text": "=💼 *Oportunidad comercial detectada en soporte* *Ticket:* #{{ $execution.id }} \n*Mensaje del cliente:* {{ $('When Executed by Another Workflow').item.json.mensaje }}\n*Resumen:* {{ $('Clasificar Ticket').item.json.output.resumen }} \n*Sesión:* {{ $('When Executed by Another Workflow').item.json.sessionId }} *🔗 traceId:* {{ $('When Executed by Another Workflow').item.json.traceId }} 👉 Contactar al cliente con la info de planes.",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        880,
+        -144
+      ],
+      "id": "1a064f03-c336-4ab1-a5a0-8da653f00ba0",
+      "name": "Aviso Comercial",
+      "webhookId": "d71fd690-a3ac-4e07-be48-ee62459b20a6",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "dbnpqZC11OSTqkDu",
+          "name": "Slack Operaciones"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Clasificar Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear Ticket": {
+      "main": [
+        [
+          {
+            "node": "¿Urgente?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Contrato ERROR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Clasificar Ticket",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificar Ticket": {
+      "main": [
+        [
+          {
+            "node": "Crear Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Contrato ERROR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Urgente?": {
+      "main": [
+        [
+          {
+            "node": "Alerta Humano",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "¿Consulta comercial?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alerta Humano": {
+      "main": [
+        [
+          {
+            "node": "¿Consulta comercial?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Consulta comercial?": {
+      "main": [
+        [
+          {
+            "node": "Aviso Comercial",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Contrato OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aviso Comercial": {
+      "main": [
+        [
+          {
+            "node": "Contrato OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 60,
+    "availableInMCP": true
+  },
+  "versionId": "b6e216b4-c4cb-46d9-8c04-811bb515d51c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c6171cfca381ae38914bd1c4c3469797197b2f3a885da106735967c6051b28c7"
+  },
+  "nodeGroups": [],
+  "id": "NZxVcH4rLE759nSp",
+  "tags": []
+}
