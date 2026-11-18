@@ -56,7 +56,7 @@ Señales ────────┼─ Correo (Gmail) ────┼──▶ 
 | M6 · Voz | [`Modulo 6/`](Modulo%206/) | Canal de Telegram multimodal: nota de voz → Whisper (Groq) → IF de contingencia calibrado con no_speech_prob y avg_logprob → agente con el RAG → respuesta hablada con ElevenLabs, o escrita si el usuario escribe. Aviso de escalamiento a Slack. Compliance: el audio no se almacena. 7/7 pruebas. |
 | M7 · Diseño vertical | [`Modulo 7/`](Modulo%207/) | Informe de consultoría de 4 páginas: especialización del sistema para Sales Ops y Customer Success, con baseline, priorización ponderada, red de 6 agentes con contratos JSON, mapa de permisos, KPIs, semáforo de riesgo con HITL, especificación de prueba y scorecards. |
 | M8 · QA | [`Modulo 8/`](Modulo%208/) | Supervisor AI-as-a-Judge: Juez Gemini con JSON Schema, validación por código y Switch de 3 rutas (aceptar, corregir con hasta 2 reintentos o escalar a Slack). Prueba A/B Sonnet 5.5 vs Haiku 5.5 (100% vs 80% de precisión; USD 23,94 vs 4,48 cada 1.000 consultas) y ciclo de mejora sobre la búsqueda RAG. |
-
+| M9 · Gobernanza | [`Modulo 9/`](Modulo%209/) | Plan de gobernanza y FinOps: `traceId` que recorre los 5 workflows y queda en Slack y en la planilla junto con el `executionId` (log JSON con emails enmascarados), keys de Anthropic separadas para desarrollo (USD 5/mes) y producción (USD 10/mes), KPIs, ROI por tarea y TCO mensual (USD 52/mes con 173 consultas), Juez con modelo de respaldo y timeout, riesgos y política de datos de cada proveedor. |
 ---
 
 ## Guardrails del sistema
