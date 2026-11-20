@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nexoflow.example/schemas/log-v2.json",
+  "title": "LogNexoFlow v2",
+  "type": "object",
+  "required": [
+    "traceId",
+    "timestamp",
+    "environment",
+    "nodeName",
+    "toolOutput",
+    "systemPromptSnapshot",
+    "confidenceScore"
+  ],
+  "properties": {
+    "traceId": {
+      "type": "string",
+      "pattern": "^tr-\\d{8}-\\d{6}-\\d+$"
+    },
+    "executionId": {
+      "type": "string",
+      "pattern": "^\\d+$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "environment": {
+      "type": "string",
+      "enum": [
+        "dev",
+        "prod"
+      ]
+    },
+    "nodeName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "toolOutput": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "systemPromptSnapshot": {
+      "type": "string",
+      "minLength": 1
+    },
+    "confidenceScore": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "veredicto": {
+      "type": "string",
+      "enum": [
+        "ACEPTADO",
+        "CORREGIR",
+        "RECHAZADO",
+        "SIN_JUEZ"
+      ]
+    },
+    "intento": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3
+    },
+    "arquitectura": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}
